@@ -1,7 +1,2 @@
-h1 {
-    color: red;
-}
-
-.moja {
-    color: green;
-}
+@import "person.css";
+@import "mainview.css";
