@@ -12,101 +12,97 @@ import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.router.*;
 import org.hibernate.exception.ConstraintViolationException;
 import org.slf4j.*;
+import org.springframework.dao.DataIntegrityViolationException;
 
 @Route("/persons")
-@PageTitle("Mange people")
+@PageTitle("Manage people")
 public class PersonView extends VerticalLayout {
 
     private final Logger logger = LoggerFactory.getLogger(PersonView.class);
     private PersonService personService;
-    private Span span = new Span();
-
-
+    private Span errorSpan = new Span();
     private Grid<Person> grid = new Grid<>();
-    private TextField taskName = new TextField();
-    private TextField taskLastName = new TextField();
-    private TextField email = new TextField();
+
+    private TextField taskName = new TextField("First Name");
+    private TextField taskLastName = new TextField("Last Name");
+    private TextField email = new TextField("Email");
 
     PersonView(PersonService personService) {
         this.personService = personService;
-        logger.info("Constructor");
+        setPadding(false);
+        setSpacing(false);
+        setSizeFull();
+        addClassName("person-view-container");
 
-        addingPersonView();
-        createdGrid();
+        initHeader();
+        initForm();
+        initGrid();
 
-        span.setVisible(false);
-        span.addClassName("error_message");
     }
 
-    private void createdGrid() {
+    private void initHeader() {
+        Div header = new Div();
+        header.addClassName("view-header");
+        header.add(new H1("Manage People"));
+        add(header);
+    }
 
-        grid.addColumn(Person::getFirstName).setHeader("First Name");
-        grid.addColumn(Person::getLastName).setHeader("Last Name");
-        grid.addColumn(Person::getEmail).setHeader("Email");
+    private void initForm() {
+
+        Div container = new Div();
+        container.addClassName("container");
+        errorSpan.addClassName("error_message");
+        errorSpan.setVisible(false);
+        taskName.setWidthFull();
+        taskLastName.setWidthFull();
+        email.setWidthFull();
+
+        Button save = new Button("Add Person");
+        save.addClassName("submit");
+        save.setWidthFull();
+
+        container.add(taskName, taskLastName, email, errorSpan,  save);
+        add(container);
+
+        save.addClickListener(e -> preparedDataForPersonToDatabase());
+    }
+
+    private void initGrid() {
+        grid.addColumn(Person::getFirstName).setHeader("First Name").setAutoWidth(true);
+        grid.addColumn(Person::getLastName).setHeader("Last Name").setAutoWidth(true);
+        grid.addColumn(Person::getEmail).setHeader("Email").setAutoWidth(true);
 
         grid.setItemsPageable(pageable -> personService
                 .getAllPersons(pageable)
                 .getContent()
         );
 
-        setSizeFull();
         grid.setSizeFull();
         add(grid);
+        setFlexGrow(1, grid);
     }
 
-    private void addingPersonView() {
-        logger.info("Inside addingPersonView");
-        Div container = new Div();
-        container.addClassName("container");
-        H1 welcome = new H1("Welcome to our app to manage tasks");
-        welcome.addClassName("welcome");
-        add(welcome);
-
-        taskName.setLabel("FirstName");
-        taskName.addClassName("firstName");
-
-        taskLastName.setLabel("LastName");
-        taskLastName.addClassName("taskLastName");
-
-        email.setLabel("Email");
-        email.addClassName("email");
-
-        Button save = new Button("Save");
-        save.addClassName("submit");
-
-        container.add(taskName, taskLastName, email, save, span);
-        add(container);
-
-        save.addClickListener(e -> {
-            preparedDataForPersonToDatabase(taskName.getValue().trim(), taskLastName.getValue().trim(), email.getValue().trim());
-        });
-    }
-
-    private void preparedDataForPersonToDatabase(String firstname, String lastname, String emailValue) {
-        logger.info("Inside preparedDataForPersonToDatabase");
+    private void preparedDataForPersonToDatabase() {
         Person person = new Person();
-        person.setFirstName(firstname);
-        person.setLastName(lastname);
-        person.setEmail(emailValue);
+        person.setFirstName(taskName.getValue().trim());
+        person.setLastName(taskLastName.getValue().trim());
+        person.setEmail(email.getValue().trim());
 
         try {
-            logger.info("Try saving person");
             personService.savePerson(person);
-
             grid.getDataProvider().refreshAll();
-
             taskName.clear();
             taskLastName.clear();
             email.clear();
-
-
-        } catch (ConstraintViolationException e) {
-            span.setVisible(true);
-            logger.warn("Not able to save person");
-            span.setText("Error");
+        } catch (DataIntegrityViolationException e) {
+            errorSpan.setText("This email already exists!");
+            errorSpan.setVisible(true);
+            //logger.error("Save error");
         } catch (Exception e) {
-            logger.warn("Error saving person\n {}", e.getMessage());
+            errorSpan.setText("Invalid catch");
+            errorSpan.setVisible(true);
+            logger.info(e.getLocalizedMessage());
+            //logger.error("Error saving data: {}", e.getMessage());
         }
-        logger.info("person has been saved successfully");
     }
 }
