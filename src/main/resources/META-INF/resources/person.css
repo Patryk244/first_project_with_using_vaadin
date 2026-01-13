@@ -67,3 +67,8 @@ vaadin-grid::part(body-cell) {
         font-size: 1.4rem;
     }
 }
+
+.error_message {
+    color: red;
+    font-weight: bold;
+}

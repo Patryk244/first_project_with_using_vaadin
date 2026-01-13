@@ -1,9 +1,9 @@
 package com.project.first_vaddin.repository;
 
 import com.project.first_vaddin.domain.Person;
-import org.springframework.data.repository.PagingAndSortingRepository;
+import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface PersonRepository extends PagingAndSortingRepository<Person, Long> {
+public interface PersonRepositoryCrud extends CrudRepository<Person,Long> {
 }
